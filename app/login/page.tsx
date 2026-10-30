@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -16,19 +17,57 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    toast.info("Login functionality will be connected with Better Auth.");
+    const formData = new FormData(e.currentTarget);
+
+    const email = (formData.get("email") as string).trim();
+    const password = formData.get("password") as string;
+
+    if (!email || !password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const { error } = await authClient.signIn.email({
+        email,
+        password,
+        rememberMe,
+        callbackURL: "/",
+      });
+
+      if (error) {
+        toast.error(error.message || "Invalid email or password.");
+        return;
+      }
+
+      toast.success("Login successful!");
+
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
-    toast.info("Google authentication will be configured soon.");
+    toast.info("Google authentication will be configured later.");
   };
 
   return (
@@ -228,11 +267,22 @@ export default function LoginPage() {
               {/* Login Button */}
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#166534] py-3.5 text-sm font-semibold text-white transition hover:bg-[#14532d] active:scale-[0.99]"
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#166534] py-3.5 text-sm font-semibold text-white transition hover:bg-[#14532d] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign In
-                <ArrowRight size={18} />
+                {isLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Signing In...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight size={18} />
+                  </>
+                )}
               </button>
+
             </form>
 
             {/* Divider */}
