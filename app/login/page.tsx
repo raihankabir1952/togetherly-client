@@ -46,7 +46,7 @@ export default function LoginPage() {
         email,
         password,
         rememberMe,
-        callbackURL: "/",
+        callbackURL: "/events",
       });
 
       if (error) {
@@ -56,7 +56,7 @@ export default function LoginPage() {
 
       toast.success("Login successful!");
 
-      router.push("/");
+      router.push("/events");
       router.refresh();
     } catch (error) {
       console.error("Login error:", error);
