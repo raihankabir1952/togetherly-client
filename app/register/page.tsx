@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -18,19 +19,23 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
 
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const photoURL = formData.get("photoURL") as string;
+    const name = (formData.get("name") as string).trim();
+    const email = (formData.get("email") as string).trim();
+    const photoURL = (formData.get("photoURL") as string).trim();
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
@@ -54,14 +59,38 @@ export default function RegisterPage() {
       return;
     }
 
-    console.log({ name, email, photoURL });
+    try {
+      setIsLoading(true);
 
-    toast.info("Registration will be connected with Better Auth soon.");
+      const { error } = await authClient.signUp.email({
+        name,
+        email,
+        password,
+        image: photoURL || undefined,
+        callbackURL: "/",
+      });
+
+      if (error) {
+        toast.error(error.message || "Registration failed.");
+        return;
+      }
+
+      toast.success("Account created successfully!");
+
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleRegister = () => {
-    toast.info("Google authentication will be configured soon.");
+    toast.info("Google authentication will be configured later.");
   };
+
 
   return (
     <main className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-[#f8faf8] px-4 py-10 dark:bg-[#101b14] sm:px-6">
@@ -291,13 +320,25 @@ export default function RegisterPage() {
               </div>
 
               {/* Submit */}
+
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#166534] py-3.5 text-sm font-semibold text-white transition hover:bg-[#14532d] active:scale-[0.99]"
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#166534] py-3.5 text-sm font-semibold text-white transition hover:bg-[#14532d] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create Account
-                <ArrowRight size={18} />
+                {isLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight size={18} />
+                  </>
+                )}
               </button>
+
             </form>
 
             {/* Divider */}
