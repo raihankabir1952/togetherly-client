@@ -66,8 +66,24 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    toast.info("Google authentication will be configured later.");
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/events",
+      });
+
+      if (error) {
+        toast.error(error.message || "Google login failed.");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast.error("Unable to login with Google.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -296,6 +312,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleGoogleLogin}
+              disabled={isLoading}
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
             >
               <svg viewBox="0 0 48 48" className="h-5 w-5">

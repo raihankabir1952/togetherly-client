@@ -24,6 +24,7 @@ export function Navbar() {
   const router = useRouter();
 
   const { data: session, isPending } = authClient.useSession();
+  console.log("Google User:", session?.user);
 
   const isLoggedIn = !!session?.user;
 
