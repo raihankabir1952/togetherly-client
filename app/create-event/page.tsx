@@ -1,20 +1,30 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarPlus,
   MapPin,
   Image as ImageIcon,
   CalendarDays,
   Send,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 export default function CreateEventPage() {
+  const router = useRouter();
+
+  const { data: session, isPending } = authClient.useSession();
+
   const [minDate, setMinDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const today = new Date();
+
     const localDate = [
       today.getFullYear(),
       String(today.getMonth() + 1).padStart(2, "0"),
@@ -23,6 +33,75 @@ export default function CreateEventPage() {
 
     setMinDate(localDate);
   }, []);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!session?.user?.email) {
+      toast.error("Please login to create an event.");
+      router.push("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+
+      const eventData = {
+        title: formData.get("title"),
+        description: formData.get("description"),
+        eventType: formData.get("eventType"),
+        thumbnail: formData.get("thumbnail"),
+        location: formData.get("location"),
+        eventDate: formData.get("eventDate"),
+        creatorEmail: session.user.email,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/events`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(eventData),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to create event.");
+      }
+
+      toast.success("Event created successfully!");
+
+      form.reset();
+
+      router.push("/events");
+      router.refresh();
+    } catch (error) {
+      console.error("Create event error:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background py-12">
@@ -56,7 +135,7 @@ export default function CreateEventPage() {
             </p>
           </div>
 
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
 
             {/* Event Title */}
             <div className="space-y-2">
@@ -69,6 +148,8 @@ export default function CreateEventPage() {
                 name="title"
                 type="text"
                 required
+                minLength={3}
+                maxLength={100}
                 placeholder="e.g. Community Park Cleanup"
                 className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
@@ -110,6 +191,7 @@ export default function CreateEventPage() {
                 name="description"
                 rows={5}
                 required
+                minLength={10}
                 placeholder="Describe your event and how people can participate..."
                 className="w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
@@ -184,10 +266,20 @@ export default function CreateEventPage() {
             <div className="border-t border-border pt-6">
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                disabled={isSubmitting || !minDate}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Send size={17} />
-                Create Event
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Creating Event...
+                  </>
+                ) : (
+                  <>
+                    <Send size={17} />
+                    Create Event
+                  </>
+                )}
               </button>
 
               <p className="mt-3 text-center text-xs text-muted-foreground">
