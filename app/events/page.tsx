@@ -61,10 +61,22 @@ export default function EventsPage() {
     });
   };
 
+  const getDaysRemaining = (date: string) => {
+    const today = new Date();
+    const eventDate = new Date(date);
+
+    today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
+
+    const difference = eventDate.getTime() - today.getTime();
+
+    return Math.ceil(difference / (1000 * 60 * 60 * 24));
+  };
+
+
   return (
     <main className="min-h-screen bg-background px-6 py-16 sm:py-20">
       <div className="mx-auto max-w-7xl">
-
         {/* Page Header */}
         <div className="mb-10">
           <span className="text-sm font-semibold uppercase tracking-wider text-primary">
@@ -129,70 +141,81 @@ export default function EventsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {events.map((event) => {
+                const daysRemaining = getDaysRemaining(event.eventDate);
 
-              {events.map((event) => (
-                <article
-                  key={event._id}
-                  className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-                >
-                  {/* Event Image */}
-                  <div className="relative h-52 w-full overflow-hidden bg-muted">
-                    <Image
-                      src={event.thumbnail}
-                      alt={event.title}
-                      fill
-                      unoptimized
-                      className="object-cover transition duration-500 group-hover:scale-105"
-                    />
+                return (
+                  <article
+                    key={event._id}
+                    className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  >
+                    {/* Event Image */}
+                    <div className="relative h-52 w-full overflow-hidden bg-muted">
+                      <Image
+                        src={event.thumbnail}
+                        alt={event.title}
+                        fill
+                        unoptimized
+                        className="object-cover transition duration-500 group-hover:scale-105"
+                      />
 
-                    <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
-                      {event.eventType}
-                    </span>
-                  </div>
-
-                  {/* Event Information */}
-                  <div className="p-5">
-
-                    <h2 className="line-clamp-1 text-xl font-semibold text-foreground">
-                      {event.title}
-                    </h2>
-
-                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                      {event.description}
-                    </p>
-
-                    <div className="mt-5 space-y-3 border-t border-border pt-4">
-
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CalendarDays size={16} className="shrink-0 text-primary" />
-                        <span>{formatDate(event.eventDate)}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin size={16} className="shrink-0 text-primary" />
-                        <span className="line-clamp-1">{event.location}</span>
-                      </div>
-
+                      <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
+                        {event.eventType}
+                      </span>
                     </div>
 
-                    {/* View Details */}
-                    <Link
-                      href={`/events/${event._id}`}
-                      className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
-                    >
-                      View Details
-                      <ArrowRight size={16} />
-                    </Link>
+                    {/* Event Information */}
+                    <div className="p-5">
+                      <h2 className="line-clamp-1 text-xl font-semibold text-foreground">
+                        {event.title}
+                      </h2>
 
-                  </div>
-                </article>
-              ))}
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                        {event.description}
+                      </p>
 
+                      <div className="mt-5 space-y-3 border-t border-border pt-4">
+                        {/* Event Date */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CalendarDays size={16} className="shrink-0 text-primary" />
+                          <span>{formatDate(event.eventDate)}</span>
+                        </div>
+
+                        {/* Countdown */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-primary">
+                            {daysRemaining === 0
+                              ? "Event is today!"
+                              : daysRemaining === 1
+                                ? "1 day remaining"
+                                : `${daysRemaining} days remaining`}
+                          </span>
+                        </div>
+
+                        {/* Event Location */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin size={16} className="shrink-0 text-primary" />
+                          <span className="line-clamp-1">{event.location}</span>
+                        </div>
+                      </div>
+
+                      {/* View Details */}
+                      <Link
+                        href={`/events/${event._id}`}
+                        className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+                      >
+                        View Details
+                        <ArrowRight size={16} />
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </>
         )}
-
       </div>
     </main>
   );
+
 }
