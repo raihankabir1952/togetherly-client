@@ -1,20 +1,139 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { CalendarCheck, CalendarCog, CalendarPlus, Menu, X } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { IoIosLogOut } from "react-icons/io";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Events", href: "/events" },
   { name: "About", href: "/#about" },
 ];
+
+const profileMenuLinks = [
+  { name: "Create Event", href: "/create-event", icon: CalendarPlus },
+  { name: "Manage Events", href: "/manage-events", icon: CalendarCog },
+  { name: "Joined Events", href: "/joined-events", icon: CalendarCheck },
+];
+
+type ProfileUser = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
+// Declared outside Navbar so the component identity is stable across renders.
+function ProfileImage({ user, size = 40 }: { user: ProfileUser; size?: number }) {
+  return (
+    <div
+      className="relative shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10"
+      style={{ width: size, height: size }}
+    >
+      {user?.image ? (
+        <Image
+          src={user.image}
+          alt={user.name || "User"}
+          fill
+          sizes={`${size}px`}
+          className="object-cover"
+          unoptimized
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-primary text-sm font-semibold text-white">
+          {user?.name?.charAt(0).toUpperCase() || "U"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfileDropdown({
+  user,
+  align = "end",
+  triggerClassName = "",
+  onNavigate,
+  children,
+}: {
+  user: ProfileUser;
+  align?: "start" | "center" | "end";
+  triggerClassName?: string;
+  onNavigate?: () => void;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger
+        aria-label={open ? "Close profile menu" : "Open profile menu"}
+        aria-expanded={open}
+        className={cn(
+          "flex items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none",
+          triggerClassName
+        )}
+      >
+        {children}
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align={align} sideOffset={8} className="w-72">
+        {/* User info */}
+        <div className="flex items-center gap-3 px-2 py-2">
+          <ProfileImage user={user} size={44} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-popover-foreground">
+              {user?.name || "User"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user?.email}
+            </p>
+          </div>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Navigation links */}
+        {profileMenuLinks.map((link) => {
+          const Icon = link.icon;
+          const isActive = pathname === link.href;
+
+          return (
+            <DropdownMenuItem
+              key={link.href}
+              render={<Link href={link.href} />}
+              onClick={onNavigate}
+              className={`flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm font-medium focus:bg-accent focus:text-accent-foreground ${
+                isActive
+                  ? "bg-secondary text-primary"
+                  : "text-popover-foreground"
+              }`}
+            >
+              <Icon
+                className={`h-4 w-4 ${isActive ? "text-primary" : "text-primary/80"}`}
+                aria-hidden="true"
+              />
+              {link.name}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +143,6 @@ export function Navbar() {
   const router = useRouter();
 
   const { data: session, isPending } = authClient.useSession();
-  console.log("Google User:", session?.user);
 
   const isLoggedIn = !!session?.user;
 
@@ -53,29 +171,6 @@ export function Navbar() {
       setIsLoggingOut(false);
     }
   };
-
-  // Profile image with fallback
-  const ProfileImage = ({ size = 40 }: { size?: number }) => (
-    <div
-      className="relative shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10"
-      style={{ width: size, height: size }}
-    >
-      {session?.user?.image ? (
-        <Image
-          src={session.user.image}
-          alt={session.user.name || "User"}
-          fill
-          sizes={`${size}px`}
-          className="object-cover"
-          unoptimized
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-primary text-sm font-semibold text-white">
-          {session?.user?.name?.charAt(0).toUpperCase() || "U"}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-md">
@@ -118,7 +213,9 @@ export function Navbar() {
             (isLoggedIn ? (
               <div className="flex items-center gap-3">
                 {/* User Profile Image */}
-                <ProfileImage />
+                <ProfileDropdown user={session.user} align="end">
+                  <ProfileImage user={session.user} />
+                </ProfileDropdown>
 
                 {/* Logout Button */}
                 <button
@@ -195,12 +292,17 @@ export function Navbar() {
                 (isLoggedIn ? (
                   <>
                     {/* Mobile User Profile */}
-                    <div className="flex items-center gap-3 px-3 py-2">
-                      <ProfileImage size={44} />
+                    <ProfileDropdown
+                      user={session.user}
+                      align="start"
+                      triggerClassName="w-full gap-3 rounded-lg px-3 py-2 hover:bg-secondary"
+                      onNavigate={closeMenu}
+                    >
+                      <ProfileImage user={session.user} size={44} />
                       <span className="text-sm font-medium text-foreground">
                         {session.user.name}
                       </span>
-                    </div>
+                    </ProfileDropdown>
 
                     {/* Mobile Logout */}
                     <button
