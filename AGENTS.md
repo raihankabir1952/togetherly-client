@@ -15,7 +15,7 @@ Single-package Next.js 16 (App Router) client for a volunteer/donation site. npm
 ## Commands
 
 - `npm run dev` — Turbopack dev server on `localhost:3000`. Note: `next dev` re-writes the generated block above; keep it committed.
-- `npm run lint` — `eslint` with flat config (`eslint.config.mjs`, eslint-config-next). **Baseline is red: 5 pre-existing errors** in `components/home/hero-section.tsx`, `components/layout/navbar.tsx`, `components/ui/carousel.tsx`, and `hooks/use-mobile.ts`. Don't assume your change broke lint; check against this baseline.
+- `npm run lint` — `eslint` with flat config (`eslint.config.mjs`, eslint-config-next). **Baseline is red: 12 pre-existing errors + 2 warnings** in `app/create-event`, `app/events/[id]`, `app/joined-events`, `app/manage-events`, `components/events/edit-event-dialog.tsx`, `components/home/hero-section.tsx`, `components/ui/carousel.tsx`, `hooks/use-mobile.ts` (mostly `react-hooks/set-state-in-effect` and unescaped quotes). Don't assume your change broke lint; check against this baseline.
 - Typecheck: no script exists — run `npx tsc --noEmit` (currently passes).
 - `npm run build` — `next build`; requires `.env.local` to be present (module-level Mongo connection, see below).
 

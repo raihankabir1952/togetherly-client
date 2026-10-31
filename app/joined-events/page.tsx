@@ -301,8 +301,12 @@ export default function JoinedEventsPage() {
                                     <p className="text-muted-foreground">
                                         No upcoming events. Explore more events to join!
                                     </p>
-                                    <Button asChild variant="link" className="mt-2 text-green-700">
-                                        <Link href="/events">Explore Events</Link>
+                                    <Button
+                                        render={<Link href="/events" />}
+                                        variant="link"
+                                        className="mt-2 text-green-700"
+                                    >
+                                        Explore Events
                                     </Button>
                                 </div>
                             ) : (
@@ -450,14 +454,14 @@ export default function JoinedEventsPage() {
                                                 </div>
 
                                                 <Button
-                                                    asChild
+                                                    render={
+                                                        <Link href={`/events/${event._id}`} />
+                                                    }
                                                     variant="outline"
                                                     className="mt-5 w-full"
                                                 >
-                                                    <Link href={`/events/${event._id}`}>
-                                                        View Details
-                                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                                    </Link>
+                                                    View Details
+                                                    <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </div>

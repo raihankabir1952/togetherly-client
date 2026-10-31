@@ -250,11 +250,12 @@ export default function EventDetailsPage({
             {error || "This event does not exist or may have been removed."}
           </p>
 
-          <Button asChild className="mt-6 bg-green-700 hover:bg-green-800">
-            <Link href="/events">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Events
-            </Link>
+          <Button
+            render={<Link href="/events" />}
+            className="mt-6 bg-green-700 hover:bg-green-800"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Events
           </Button>
         </div>
       </main>

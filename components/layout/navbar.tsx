@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { IoIosLogOut } from "react-icons/io";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -209,6 +210,7 @@ export function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden items-center gap-3 md:flex">
+          <ThemeToggle />
           {!isPending &&
             (isLoggedIn ? (
               <div className="flex items-center gap-3">
@@ -256,16 +258,19 @@ export function Navbar() {
             ))}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
-          className="rounded-lg p-2 text-foreground transition-colors hover:bg-secondary md:hidden"
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile Actions */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
+            className="rounded-lg p-2 text-foreground transition-colors hover:bg-secondary"
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile Navigation */}
