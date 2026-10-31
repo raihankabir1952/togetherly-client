@@ -236,30 +236,30 @@ export default function ManageEventsPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4">
+                  <div className="mt-5 grid grid-cols-3 gap-1.5 border-t border-border pt-4 sm:gap-2">
                     <Link
                       href={`/events/${event._id}`}
-                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-1 py-2 text-xs font-medium text-foreground transition hover:bg-muted sm:px-2 sm:text-sm"
                     >
-                      <Eye size={16} />
+                      <Eye size={16} className="shrink-0" />
                       View
                     </Link>
 
                     <button
                       type="button"
                       onClick={() => handleEdit(event)}
-                      className="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-50 px-2 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-950"
+                      className="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-50 px-1 py-2 text-xs font-medium text-blue-600 transition hover:bg-blue-100 sm:px-2 sm:text-sm dark:bg-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-950"
                     >
-                      <Pencil size={16} />
+                      <Pencil size={16} className="shrink-0" />
                       Edit
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleDelete(event)}
-                      className="inline-flex items-center justify-center gap-1 rounded-lg bg-red-50 px-2 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950"
+                      className="inline-flex items-center justify-center gap-1 rounded-lg bg-red-50 px-1 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 sm:px-2 sm:text-sm dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={16} className="shrink-0" />
                       Delete
                     </button>
                   </div>

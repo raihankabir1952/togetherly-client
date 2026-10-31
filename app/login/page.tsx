@@ -229,7 +229,7 @@ export default function LoginPage() {
                     onClick={() =>
                       toast.info("Password recovery will be available soon.")
                     }
-                    className="text-xs font-semibold text-[#166534] hover:underline dark:text-green-400"
+                    className="py-1 text-xs font-semibold text-[#166534] hover:underline dark:text-green-400"
                   >
                     Forgot password?
                   </button>
@@ -255,7 +255,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute top-1/2 right-4 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                    className="absolute top-1/2 right-2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white"
                   >
                     {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                   </button>

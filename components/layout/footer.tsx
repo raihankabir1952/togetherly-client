@@ -5,12 +5,12 @@ import { ArrowUpRight, Heart } from "lucide-react";
 
 const quickLinks = [
   { label: "Home", href: "/" },
-  { label: "Upcoming Events", href: "/upcoming-events" },
+  { label: "Upcoming Events", href: "/events" },
   { label: "Create an Event", href: "/create-event" },
 ];
 
 const communityLinks = [
-  { label: "Join Events", href: "/upcoming-events" },
+  { label: "Join Events", href: "/events" },
   { label: "Joined Events", href: "/joined-events" },
   { label: "Manage Events", href: "/manage-events" },
 ];
@@ -50,7 +50,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
+                    className="inline-flex items-center gap-2 py-1 text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
                     {link.label}
                     <ArrowUpRight size={14} />
@@ -71,7 +71,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
+                    className="inline-flex items-center gap-2 py-1 text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
                     {link.label}
                     <ArrowUpRight size={14} />

@@ -35,7 +35,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex items-center justify-center rounded-lg p-2 text-foreground transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none",
+        "inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2.5 text-foreground transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none",
         className
       )}
     >

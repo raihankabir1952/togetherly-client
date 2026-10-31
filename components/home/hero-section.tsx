@@ -30,7 +30,7 @@ export function HeroSection() {
           {/* CTA Buttons */}
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <Link
-              href="/upcoming-events"
+              href="/events"
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg"
             >
               Explore Events
@@ -46,7 +46,7 @@ export function HeroSection() {
           </div>
 
           {/* Community Stats */}
-          <div className="mt-12 flex flex-wrap items-center gap-8 border-t border-border pt-7">
+          <div className="mt-12 flex flex-wrap items-center gap-6 border-t border-border pt-7 sm:gap-8">
             <div>
               <div className="flex items-center gap-2 text-2xl font-bold text-foreground">
                 <Users size={22} className="text-primary" />

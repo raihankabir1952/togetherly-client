@@ -184,7 +184,7 @@ export function Navbar() {
             width={240}
             height={70}
             priority
-            className="h-24 w-auto object-contain"
+            className="h-16 w-auto object-contain sm:h-20 md:h-24"
           />
         </Link>
 
@@ -275,7 +275,7 @@ export function Navbar() {
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="border-t border-border bg-background px-4 py-5 shadow-lg md:hidden">
+        <div className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-border bg-background px-4 py-5 shadow-lg md:hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-4">
             {navLinks.map((link) => (
               <Link

@@ -164,3 +164,15 @@
     @apply cursor-pointer;
   }
 }
+
+/* Mobile (<=640px): keep form fields at 16px so iOS Safari does not
+   auto-zoom the viewport when a field is focused (it zooms whenever the
+   focused input's font-size is below 16px). Declared outside any @layer so
+   it intentionally overrides Tailwind's `text-sm` utility on inputs. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

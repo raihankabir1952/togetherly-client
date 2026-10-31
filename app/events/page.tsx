@@ -75,7 +75,7 @@ export default function EventsPage() {
 
 
   return (
-    <main className="min-h-screen bg-background px-6 py-16 sm:py-20">
+    <main className="min-h-screen bg-background px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-7xl">
         {/* Page Header */}
         <div className="mb-10">
