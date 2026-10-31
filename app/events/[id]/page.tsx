@@ -2,283 +2,507 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-
+import { useRouter } from "next/navigation";
 import {
-    CalendarDays,
-    MapPin,
-    ArrowLeft,
-    Loader2,
-    CalendarX,
-    UserRound,
+  CalendarDays,
+  MapPin,
+  ArrowLeft,
+  Loader2,
+  CalendarX,
+  UserRound,
+  Mail,
+  Users,
+  CheckCircle2,
+  LogIn,
 } from "lucide-react";
+import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import LeaveEventDialog from "@/components/events/leave-event-dialog";
 
 interface Event {
-    _id: string;
-    title: string;
-    description: string;
-    eventType: string;
-    thumbnail: string;
-    location: string;
-    eventDate: string;
-    creatorEmail: string;
+  _id: string;
+  title: string;
+  description: string;
+  eventType: string;
+  thumbnail: string;
+  location: string;
+  eventDate: string;
+  creatorEmail: string;
 }
 
 interface Organizer {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
 }
 
 interface EventDetailsResponse {
-    success: boolean;
-    event: Event;
-    organizer: Organizer | null;
+  success: boolean;
+  event: Event;
+  organizer: Organizer | null;
+  message?: string;
 }
 
 export default function EventDetailsPage({
-    params,
+  params,
 }: {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }) {
-    const [id, setId] = useState("");
+  const router = useRouter();
 
-    const [event, setEvent] = useState<Event | null>(null);
-    const [organizer, setOrganizer] = useState<Organizer | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
 
-    useEffect(() => {
-        params.then(({ id }) => {
-            setId(id);
-        });
-    }, [params]);
+  const userEmail = session?.user?.email;
 
-    useEffect(() => {
-        const fetchEventDetails = async () => {
-            try {
-                setIsLoading(true);
-                setError("");
+  const [id, setId] = useState("");
+  const [event, setEvent] = useState<Event | null>(null);
+  const [organizer, setOrganizer] = useState<Organizer | null>(null);
 
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/events/${id}`
-                );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-                const data: EventDetailsResponse = await response.json();
+  const [isJoining, setIsJoining] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
+  const [isCheckingJoinStatus, setIsCheckingJoinStatus] =
+    useState(false);
 
-                if (!response.ok) {
-                    throw new Error("Unable to load event details.");
-                }
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
 
-                setEvent(data.event);
-                setOrganizer(data.organizer);
-            } catch (error) {
-                console.error("Event details error:", error);
+  // Get event ID from route params
+  useEffect(() => {
+    params.then(({ id }) => {
+      setId(id);
+    });
+  }, [params]);
 
-                setError(
-                    error instanceof Error
-                        ? error.message
-                        : "Something went wrong."
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        };
+  // Fetch event details
+  useEffect(() => {
+    if (!id) return;
 
-        if (id) {
-            fetchEventDetails();
+    const fetchEventDetails = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/events/${id}`
+        );
+
+        const data: EventDetailsResponse = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load event details."
+          );
         }
-    }, [id]);
 
-    // Loading state
-    if (isLoading) {
-        return (
-            <div className="flex min-h-[70vh] items-center justify-center">
-                <Loader2 className="h-9 w-9 animate-spin text-primary" />
-            </div>
+        setEvent(data.event);
+        setOrganizer(data.organizer);
+      } catch (error) {
+        console.error("Event details error:", error);
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong."
         );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEventDetails();
+  }, [id]);
+
+  // Check whether the current user has joined this event
+  useEffect(() => {
+    if (isSessionPending || !event) return;
+
+    if (!userEmail || event.creatorEmail === userEmail) {
+      setIsJoined(false);
+      setIsCheckingJoinStatus(false);
+      return;
     }
 
-    // Error state
-    if (error || !event) {
-        return (
-            <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
-                <CalendarX className="mb-4 h-12 w-12 text-muted-foreground" />
+    let isActive = true;
 
-                <h2 className="text-2xl font-bold text-foreground">
-                    Event Not Found
-                </h2>
+    const checkJoinStatus = async () => {
+      try {
+        setIsCheckingJoinStatus(true);
 
-                <p className="mt-2 text-muted-foreground">
-                    {error || "This event may have been removed."}
-                </p>
-
-                <Link
-                    href="/events"
-                    className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-medium text-white"
-                >
-                    <ArrowLeft size={18} />
-                    Back to Events
-                </Link>
-            </div>
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}/join-status?email=${encodeURIComponent(userEmail)}`
         );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to check join status."
+          );
+        }
+
+        if (isActive) {
+          setIsJoined(data.isJoined);
+        }
+      } catch (error) {
+        console.error("Join status error:", error);
+      } finally {
+        if (isActive) {
+          setIsCheckingJoinStatus(false);
+        }
+      }
+    };
+
+    checkJoinStatus();
+
+    return () => {
+      isActive = false;
+    };
+  }, [event, userEmail, isSessionPending]);
+
+  // Join event
+  const handleJoinEvent = async () => {
+    if (!userEmail) {
+      toast.info("Please login to join this event.");
+      router.push("/login");
+      return;
     }
 
-    const formattedDate = new Date(event.eventDate).toLocaleDateString(
-        "en-US",
+    if (!event) return;
+
+    try {
+      setIsJoining(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}/join`,
         {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userEmail,
+          }),
         }
-    );
+      );
 
+      const data = await response.json();
+
+      if (response.status === 409) {
+        setIsJoined(true);
+        toast.info("You have already joined this event.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to join this event."
+        );
+      }
+
+      setIsJoined(true);
+      toast.success("You have successfully joined this event!");
+    } catch (error) {
+      console.error("Join event error:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong."
+      );
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  // Loading state
+  if (isLoading || isSessionPending || !id) {
     return (
-        <main className="min-h-screen bg-background px-4 py-10 sm:py-14">
-            <div className="mx-auto max-w-5xl">
-
-                {/* Back Button */}
-                <Link
-                    href="/events"
-                    className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-primary"
-                >
-                    <ArrowLeft size={18} />
-                    Back to Events
-                </Link>
-
-                {/* Event Image */}
-                <div className="relative h-64 overflow-hidden rounded-2xl bg-muted sm:h-96">
-                    {event.thumbnail ? (
-                        <Image
-                            src={event.thumbnail}
-                            alt={event.title}
-                            fill
-                            unoptimized
-                            priority
-                            className="object-cover"
-                        />
-                    ) : (
-                        <div className="flex h-full items-center justify-center">
-                            <CalendarDays className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                    )}
-
-                    <div className="absolute bottom-4 left-4">
-                        <span className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow">
-                            {event.eventType}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Event Information */}
-                <div className="mt-8 grid gap-8 md:grid-cols-[1fr_300px]">
-
-                    {/* Main Content */}
-                    <div>
-                        <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl">
-                            {event.title}
-                        </h1>
-
-                        {/* Date and Location */}
-                        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-lg bg-primary/10 p-3 text-primary">
-                                    <CalendarDays size={21} />
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Event Date
-                                    </p>
-                                    <p className="font-medium text-foreground">
-                                        {formattedDate}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-lg bg-primary/10 p-3 text-primary">
-                                    <MapPin size={21} />
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Location
-                                    </p>
-                                    <p className="font-medium text-foreground">
-                                        {event.location}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="mt-10 border-t border-border pt-7">
-                            <h2 className="text-2xl font-bold text-foreground">
-                                About This Event
-                            </h2>
-
-                            <p className="mt-4 whitespace-pre-line leading-8 text-muted-foreground">
-                                {event.description}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Organizer Profile */}
-                    <aside>
-                        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                            <h2 className="text-lg font-bold text-foreground">
-                                Event Organizer
-                            </h2>
-
-                            {organizer ? (
-                                <div className="mt-5 flex items-center gap-4">
-                                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted">
-                                        {organizer.image ? (
-                                            <Image
-                                                src={organizer.image}
-                                                alt={organizer.name}
-                                                fill
-                                                unoptimized
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex h-full items-center justify-center">
-                                                <UserRound className="h-7 w-7 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="min-w-0">
-                                        <h3 className="truncate font-semibold text-foreground">
-                                            {organizer.name}
-                                        </h3>
-
-                                        <p className="mt-1 break-all text-sm text-muted-foreground">
-                                            {organizer.email}
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <p className="mt-4 text-sm text-muted-foreground">
-                                    Organizer information is unavailable.
-                                </p>
-                            )}
-
-                            <div className="mt-5 rounded-lg bg-primary/5 p-3">
-                                <p className="text-sm leading-6 text-muted-foreground">
-                                    This event is organized by a community member who wants
-                                    to make a positive difference.
-                                </p>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            </div>
-        </main>
+      <main className="flex min-h-[70vh] items-center justify-center px-4">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+          <p className="text-sm text-muted-foreground">
+            Loading event details...
+          </p>
+        </div>
+      </main>
     );
+  }
+
+  // Error state
+  if (error || !event) {
+    return (
+      <main className="flex min-h-[70vh] items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <CalendarX className="mx-auto mb-4 h-12 w-12 text-red-500" />
+
+          <h2 className="text-2xl font-bold">
+            Event Not Found
+          </h2>
+
+          <p className="mt-2 text-muted-foreground">
+            {error || "This event does not exist or may have been removed."}
+          </p>
+
+          <Button asChild className="mt-6 bg-green-700 hover:bg-green-800">
+            <Link href="/events">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Events
+            </Link>
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
+  const isOwnEvent = userEmail === event.creatorEmail;
+
+  const eventDate = new Date(event.eventDate);
+
+  const formattedDate = eventDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const isPastEvent = eventDate.getTime() < Date.now();
+
+  return (
+    <main className="bg-background">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+
+        {/* Back Button */}
+        <Link
+          href="/events"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-green-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Events
+        </Link>
+
+        {/* Event Cover */}
+        <div className="relative mb-8 h-[260px] overflow-hidden rounded-2xl bg-muted sm:h-[400px]">
+          <Image
+            src={event.thumbnail}
+            alt={event.title}
+            fill
+            unoptimized
+            className="object-cover"
+            priority
+          />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+          <span className="absolute bottom-5 left-5 rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white">
+            {event.eventType}
+          </span>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+
+          {/* Main Event Information */}
+          <div>
+            <div className="mb-5">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                {event.title}
+              </h1>
+
+              <div className="mt-5 flex flex-col gap-3 text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-6">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-green-700" />
+                  <span>{formattedDate}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-green-700" />
+                  <span>{event.location}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-border bg-card p-6">
+              <h2 className="text-xl font-bold">
+                About This Event
+              </h2>
+
+              <p className="mt-4 whitespace-pre-line leading-8 text-muted-foreground">
+                {event.description}
+              </p>
+            </div>
+
+            {/* Organizer Information */}
+            <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+              <h2 className="text-xl font-bold">
+                Event Organizer
+              </h2>
+
+              {organizer ? (
+                <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted">
+                    {organizer.image ? (
+                      <Image
+                        src={organizer.image}
+                        alt={organizer.name}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <UserRound className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      {organizer.name}
+                    </h3>
+
+                    <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      {organizer.email}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Organizer information is not available.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Join Event Sidebar */}
+          <aside>
+            <div className="sticky top-24 rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-xl font-bold">
+                Be Part of the Change
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Join this community event and help make a positive impact.
+                Every small action matters.
+              </p>
+
+              <div className="mt-6 space-y-4 border-y border-border py-5">
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="h-5 w-5 text-green-700" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Event Date
+                    </p>
+                    <p className="text-sm font-medium">
+                      {formattedDate}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-green-700" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Location
+                    </p>
+                    <p className="text-sm font-medium">
+                      {event.location}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Users className="h-5 w-5 text-green-700" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Participation
+                    </p>
+                    <p className="text-sm font-medium">
+                      Community Welcome
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Own Event */}
+              {isOwnEvent ? (
+                <div className="mt-5 rounded-lg bg-green-50 p-4 text-center text-sm font-medium text-green-800 dark:bg-green-950/40 dark:text-green-300">
+                  <CheckCircle2 className="mx-auto mb-2 h-5 w-5" />
+                  You are the organizer of this event.
+                </div>
+              ) : isPastEvent ? (
+                <div className="mt-5 rounded-lg bg-muted p-4 text-center text-sm font-medium text-muted-foreground">
+                  This event has already started.
+                </div>
+              ) : !userEmail ? (
+                <Button
+                  className="mt-6 w-full bg-green-700 hover:bg-green-800"
+                  onClick={() => router.push("/login")}
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login to Join
+                </Button>
+              ) : (
+                <div className="mt-6">
+                  {isCheckingJoinStatus ? (
+                    <Button disabled className="w-full">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking Status...
+                    </Button>
+                  ) : isJoined ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-center gap-2 rounded-lg bg-green-50 p-3 text-sm font-medium text-green-800 dark:bg-green-950/40 dark:text-green-300">
+                        <CheckCircle2 className="h-5 w-5" />
+                        You have joined this event
+                      </div>
+
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() => setIsLeaveDialogOpen(true)}
+                      >
+                        Leave Event
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      className="w-full bg-green-700 hover:bg-green-800"
+                      onClick={handleJoinEvent}
+                      disabled={isJoining}
+                    >
+                      {isJoining ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Joining...
+                        </>
+                      ) : (
+                        "Join Event"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {/* Leave Confirmation Dialog */}
+      {userEmail && (
+        <LeaveEventDialog
+          eventId={event._id}
+          email={userEmail}
+          open={isLeaveDialogOpen}
+          onOpenChange={setIsLeaveDialogOpen}
+          onLeft={() => setIsJoined(false)}
+        />
+      )}
+    </main>
+  );
 }
