@@ -275,6 +275,7 @@ export default function EventDetailsPage({
 
   const isPastEvent = eventDate.getTime() < Date.now();
 
+
   return (
     <main className="bg-background">
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -328,10 +329,9 @@ export default function EventDetailsPage({
               </div>
             </div>
 
+            {/* About Event */}
             <div className="mt-8 rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-xl font-bold">
-                About This Event
-              </h2>
+              <h2 className="text-xl font-bold">About This Event</h2>
 
               <p className="mt-4 whitespace-pre-line leading-8 text-muted-foreground">
                 {event.description}
@@ -340,9 +340,7 @@ export default function EventDetailsPage({
 
             {/* Organizer Information */}
             <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-xl font-bold">
-                Event Organizer
-              </h2>
+              <h2 className="text-xl font-bold">Event Organizer</h2>
 
               {organizer ? (
                 <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -379,6 +377,67 @@ export default function EventDetailsPage({
                 </p>
               )}
             </div>
+
+            {/* Community Guidelines */}
+            <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+              <h2 className="flex items-center gap-3 text-xl font-bold">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                  <span className="text-lg">✓</span>
+                </span>
+                Community Guidelines
+              </h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Help us create a safe and welcoming community.
+              </p>
+
+              <div className="mt-6 space-y-5">
+                <div className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                    1
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      Respect Everyone
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      Treat all participants with kindness and respect. Everyone
+                      deserves a welcoming environment.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                    2
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      Be Responsible
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      Follow the event rules and organizer instructions. Arrive
+                      on time and participate responsibly.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                    3
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      Protect Our Environment
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      Keep the surroundings clean, respect public spaces, and
+                      help maintain a safe environment for everyone.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Join Event Sidebar */}
@@ -397,36 +456,24 @@ export default function EventDetailsPage({
                 <div className="flex items-center gap-3">
                   <CalendarDays className="h-5 w-5 text-green-700" />
                   <div>
-                    <p className="text-xs text-muted-foreground">
-                      Event Date
-                    </p>
-                    <p className="text-sm font-medium">
-                      {formattedDate}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Event Date</p>
+                    <p className="text-sm font-medium">{formattedDate}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-green-700" />
                   <div>
-                    <p className="text-xs text-muted-foreground">
-                      Location
-                    </p>
-                    <p className="text-sm font-medium">
-                      {event.location}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Location</p>
+                    <p className="text-sm font-medium">{event.location}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Users className="h-5 w-5 text-green-700" />
                   <div>
-                    <p className="text-xs text-muted-foreground">
-                      Participation
-                    </p>
-                    <p className="text-sm font-medium">
-                      Community Welcome
-                    </p>
+                    <p className="text-xs text-muted-foreground">Participation</p>
+                    <p className="text-sm font-medium">Community Welcome</p>
                   </div>
                 </div>
               </div>
@@ -444,7 +491,11 @@ export default function EventDetailsPage({
               ) : !userEmail ? (
                 <Button
                   className="mt-6 w-full bg-green-700 hover:bg-green-800"
-                  onClick={() => router.push("/login")}
+                  onClick={() =>
+                    router.push(
+                      `/login?callbackURL=${encodeURIComponent(`/events/${event._id}`)}`
+                    )
+                  }
                 >
                   <LogIn className="mr-2 h-4 w-4" />
                   Login to Join
@@ -506,4 +557,5 @@ export default function EventDetailsPage({
       )}
     </main>
   );
+
 }
