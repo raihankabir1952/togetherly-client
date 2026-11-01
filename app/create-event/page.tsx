@@ -49,6 +49,14 @@ export default function CreateEventPage() {
       const form = e.currentTarget;
       const formData = new FormData(form);
 
+      // Generate JWT token
+      const { data, error } = await authClient.token();
+
+      if (error || !data?.token) {
+        throw new Error("Failed to get authentication token.");
+      }
+
+      // Prepare event data
       const eventData = {
         title: formData.get("title"),
         description: formData.get("description"),
@@ -56,15 +64,16 @@ export default function CreateEventPage() {
         thumbnail: formData.get("thumbnail"),
         location: formData.get("location"),
         eventDate: formData.get("eventDate"),
-        creatorEmail: session.user.email,
       };
 
+      // Send request with JWT token
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/events`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${data.token}`,
           },
           body: JSON.stringify(eventData),
         }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import {
   CalendarDays,
   MapPin,
@@ -287,6 +288,23 @@ export default function EventDetailsPage({
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const handleGetToken = async () => {
+    const { data, error } = await authClient.token();
+
+    if (error || !data) {
+      console.error("Token Error:", error);
+      return;
+    }
+
+    const response = await fetch("http://localhost:5000/test-token", {
+      headers: {
+        Authorization: `Bearer ${data.token}`,
+      },
+    });
+
+    console.log(await response.json());
   };
 
   // Loading state
@@ -683,6 +701,17 @@ export default function EventDetailsPage({
                     </Button>
                   )}
                 </div>
+              )}
+
+              {/* Temporary JWT Test Button */}
+              {userEmail && (
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={handleGetToken}
+                >
+                  {/* Get JWT Token */}
+                </Button>
               )}
             </div>
           </aside>

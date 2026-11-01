@@ -54,16 +54,29 @@ export default function ManageEventsPage() {
     try {
       setError("");
 
+      // Generate JWT token
+      const { data, error } = await authClient.token();
+
+      if (error || !data?.token) {
+        throw new Error("Failed to get authentication token.");
+      }
+
+      // Fetch events with JWT
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/my-events?email=${encodeURIComponent(userEmail)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/my-events`,
+        {
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        }
       );
 
       if (!response.ok) {
         throw new Error("Failed to fetch your events.");
       }
 
-      const data = await response.json();
-      setEvents(data.events || []);
+      const result = await response.json();
+      setEvents(result.events || []);
     } catch (error) {
       console.error("Manage events error:", error);
       setError("Unable to load your events. Please try again later.");

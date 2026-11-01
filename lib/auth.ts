@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import clientPromise from "@/lib/db";
+import { jwt } from "better-auth/plugins"
 
 const client = await clientPromise;
 
@@ -15,6 +16,18 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 6,
     requireEmailVerification: false,
+  },
+
+  plugins: [
+    jwt()
+  ],
+  session: {
+    cookieCache: {
+      strategy: "jwt",
+      enabled: true,
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+
+    }
   },
 
   account: {

@@ -4,6 +4,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import {
   Dialog,
   DialogContent,
@@ -93,17 +94,22 @@ export default function EditEventDialog({
     setIsSubmitting(true);
 
     try {
+      // Generate JWT token
+      const { data, error } = await authClient.token();
+
+      if (error || !data?.token) {
+        throw new Error("Failed to get authentication token.");
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${data.token}`,
           },
-          body: JSON.stringify({
-            ...formData,
-            creatorEmail: email,
-          }),
+          body: JSON.stringify(formData),
         }
       );
 
@@ -114,6 +120,7 @@ export default function EditEventDialog({
       }
 
       toast.success("Event updated successfully!");
+
       onOpenChange(false);
       onUpdated();
     } catch (error) {
