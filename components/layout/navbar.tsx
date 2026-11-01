@@ -21,8 +21,8 @@ import {
 
 const navLinks = [
   { name: "Home", href: "/" },
-  { name: "Events", href: "/events" },
-  { name: "About", href: "/#about" },
+  { name: "Explore Events", href: "/events" },
+  // { name: "About", href: "/#about" },
 ];
 
 const profileMenuLinks = [

@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -19,8 +19,10 @@ import {
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackURL = searchParams.get("callbackURL") || "/events";
 
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -46,7 +48,7 @@ export default function LoginPage() {
         email,
         password,
         rememberMe,
-        callbackURL: "/events",
+        callbackURL,
       });
 
       if (error) {
@@ -56,7 +58,7 @@ export default function LoginPage() {
 
       toast.success("Login successful!");
 
-      router.push("/events");
+      router.push(callbackURL);
       router.refresh();
     } catch (error) {
       console.error("Login error:", error);
@@ -72,7 +74,7 @@ export default function LoginPage() {
 
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/events",
+        callbackURL,
       });
 
       if (error) {
@@ -298,7 +300,6 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
-
             </form>
 
             {/* Divider */}
@@ -343,5 +344,19 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-[#f8faf8] dark:bg-[#101b14]">
+          Loading...
+        </div>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

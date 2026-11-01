@@ -170,7 +170,7 @@ export default function EventDetailsPage({
   const handleJoinEvent = async () => {
     if (!userEmail) {
       toast.info("Please login to join this event.");
-      router.push("/login");
+      router.push(`/login?callbackURL=${encodeURIComponent(`/events/${event}`)}`);
       return;
     }
 
