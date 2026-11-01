@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,6 +10,8 @@ import {
   ArrowRight,
   Loader2,
   CalendarX,
+  Search,
+  SearchX,
 } from "lucide-react";
 
 interface Event {
@@ -23,10 +25,23 @@ interface Event {
   creatorEmail: string;
 }
 
+// Event types supported by the create/edit event forms
+const EVENT_CATEGORIES = [
+  "Donation",
+  "Cleanup",
+  "Plantation",
+  "Food Distribution",
+  "Education",
+  "Community Support",
+];
+
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -73,6 +88,35 @@ export default function EventsPage() {
     return Math.ceil(difference / (1000 * 60 * 60 * 24));
   };
 
+  // Filter options: "All", every app-supported category, plus any other
+  // event types present in the data so nothing becomes unreachable.
+  const categories = useMemo(() => {
+    const typesInData = new Set(events.map((event) => event.eventType));
+    const extraTypes = Array.from(typesInData).filter(
+      (type) => !EVENT_CATEGORIES.includes(type)
+    );
+
+    return ["All", ...EVENT_CATEGORIES, ...extraTypes];
+  }, [events]);
+
+  // Category filter and search work together (both must match)
+  const filteredEvents = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return events.filter((event) => {
+      const matchesCategory =
+        activeCategory === "All" ||
+        event.eventType.toLowerCase() === activeCategory.toLowerCase();
+
+      const matchesSearch =
+        query === "" ||
+        event.title.toLowerCase().includes(query) ||
+        event.location.toLowerCase().includes(query);
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [events, activeCategory, searchQuery]);
+
 
   return (
     <main className="min-h-screen bg-background px-4 py-16 sm:px-6 sm:py-20">
@@ -92,6 +136,46 @@ export default function EventsPage() {
             Join hands with others to create positive change.
           </p>
         </div>
+
+        {/* Search & Category Filters */}
+        {!isLoading && !error && events.length > 0 && (
+          <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Category Filters */}
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setActiveCategory(category)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                    activeCategory === category
+                      ? "bg-primary text-white"
+                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative w-full lg:w-72 lg:shrink-0">
+              <Search
+                size={16}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by title or location..."
+                aria-label="Search events by title or location"
+                className="w-full rounded-lg border border-input bg-background py-3 pl-11 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {isLoading && (
@@ -127,21 +211,48 @@ export default function EventsPage() {
           </div>
         )}
 
+        {/* No Matches State */}
+        {!isLoading && !error && events.length > 0 && filteredEvents.length === 0 && (
+          <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-border px-4 text-center">
+            <SearchX size={48} className="mb-4 text-muted-foreground" />
+
+            <h2 className="text-xl font-semibold text-foreground">
+              No Events Found
+            </h2>
+
+            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+              No events match your search or selected category. Try
+              adjusting your filters.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCategory("All");
+                setSearchQuery("");
+              }}
+              className="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
+
         {/* Events Grid */}
-        {!isLoading && !error && events.length > 0 && (
+        {!isLoading && !error && filteredEvents.length > 0 && (
           <>
             <div className="mb-6 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Showing{" "}
                 <span className="font-semibold text-foreground">
-                  {events.length}
+                  {filteredEvents.length}
                 </span>{" "}
                 upcoming events
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {events.map((event) => {
+              {filteredEvents.map((event) => {
                 const daysRemaining = getDaysRemaining(event.eventDate);
 
                 return (
