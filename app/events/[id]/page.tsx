@@ -47,6 +47,18 @@ interface EventDetailsResponse {
   message?: string;
 }
 
+interface Participant {
+  name: string;
+  image?: string;
+}
+
+interface ParticipantsResponse {
+  success: boolean;
+  totalParticipants: number;
+  participants: Participant[];
+  message?: string;
+}
+
 export default function EventDetailsPage({
   params,
 }: {
@@ -65,6 +77,12 @@ export default function EventDetailsPage({
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [totalParticipants, setTotalParticipants] = useState(0);
+  const [isParticipantsLoading, setIsParticipantsLoading] =
+    useState(true);
+  const [participantsError, setParticipantsError] = useState("");
 
   const [isJoining, setIsJoining] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
@@ -119,15 +137,65 @@ export default function EventDetailsPage({
     fetchEventDetails();
   }, [id]);
 
+  // Fetch joined participants
+  useEffect(() => {
+    if (!id) return;
+
+    let isActive = true;
+
+    const fetchParticipants = async () => {
+      try {
+        setIsParticipantsLoading(true);
+        setParticipantsError("");
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/events/${id}/participants`
+        );
+
+        const data: ParticipantsResponse = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load participants."
+          );
+        }
+
+        if (isActive) {
+          setParticipants(data.participants);
+          setTotalParticipants(data.totalParticipants);
+        }
+      } catch (error) {
+        console.error("Participants error:", error);
+
+        if (isActive) {
+          setParticipantsError(
+            error instanceof Error
+              ? error.message
+              : "Something went wrong."
+          );
+        }
+      } finally {
+        if (isActive) {
+          setIsParticipantsLoading(false);
+        }
+      }
+    };
+
+    fetchParticipants();
+
+    return () => {
+      isActive = false;
+    };
+  }, [id]);
+
   // Check whether the current user has joined this event
   useEffect(() => {
     if (isSessionPending || !event) return;
 
-    if (!userEmail || event.creatorEmail === userEmail) {
-      setIsJoined(false);
-      setIsCheckingJoinStatus(false);
-      return;
-    }
+    // Logged-out users and the event organizer cannot join, so there is
+    // nothing to check. Their join state stays at its default (not joined,
+    // not checking) and the UI does not read it in those cases.
+    if (!userEmail || event.creatorEmail === userEmail) return;
 
     let isActive = true;
 
@@ -336,6 +404,82 @@ export default function EventDetailsPage({
               <p className="mt-4 whitespace-pre-line leading-8 text-muted-foreground">
                 {event.description}
               </p>
+            </div>
+
+            {/* Participants */}
+            <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+              <h2 className="flex items-center gap-3 text-xl font-bold">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                  <Users className="h-5 w-5" />
+                </span>
+                Participants
+                {!isParticipantsLoading &&
+                  !participantsError &&
+                  totalParticipants > 0 && (
+                    <span className="ml-auto rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                      {totalParticipants} Joined
+                    </span>
+                  )}
+              </h2>
+
+              {isParticipantsLoading ? (
+                <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin text-green-700" />
+                  Loading participants...
+                </div>
+              ) : participantsError ? (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Participant information is not available.
+                </p>
+              ) : totalParticipants === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  No one has joined this event yet. Be the first to
+                  make a difference!
+                </p>
+              ) : (
+                <>
+                  <div className="mt-5 flex flex-wrap gap-4">
+                    {participants.slice(0, 5).map((participant, index) => (
+                      <div
+                        key={`${participant.name}-${index}`}
+                        className="flex w-20 flex-col items-center gap-2 text-center"
+                      >
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-muted">
+                          {participant.image ? (
+                            <Image
+                              src={participant.image}
+                              alt={participant.name}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <UserRound className="h-7 w-7 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+
+                        <span className="w-full break-words text-xs font-medium text-foreground">
+                          {participant.name}
+                        </span>
+                      </div>
+                    ))}
+
+                    {totalParticipants > 5 && (
+                      <div className="flex w-20 flex-col items-center gap-2 text-center">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700 dark:bg-green-950/50 dark:text-green-400">
+                          +{totalParticipants - 5}
+                        </div>
+
+                        <span className="text-xs font-medium text-muted-foreground">
+                          more
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Organizer Information */}
