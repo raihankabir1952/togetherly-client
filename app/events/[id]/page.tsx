@@ -739,10 +739,9 @@ export default function EventDetailsPage({
       </section>
 
       {/* Leave Confirmation Dialog */}
-      {userEmail && (
+      {userEmail && event && (
         <LeaveEventDialog
           eventId={event._id}
-          email={userEmail}
           open={isLeaveDialogOpen}
           onOpenChange={setIsLeaveDialogOpen}
           onLeft={() => setIsJoined(false)}

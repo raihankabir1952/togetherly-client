@@ -491,7 +491,7 @@ export default function JoinedEventsPage() {
             {selectedEvent && (
                 <LeaveEventDialog
                     eventId={selectedEvent._id}
-                    email={userEmail}
+                    // email={userEmail}
                     open={isLeaveDialogOpen}
                     onOpenChange={(open) => {
                         setIsLeaveDialogOpen(open);
