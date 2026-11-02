@@ -192,12 +192,9 @@ export default function EventDetailsPage({
   // Check whether the current user has joined this event
   useEffect(() => {
     if (isSessionPending || !event) return;
-
-    // Logged-out users and the event organizer cannot join, so there is
-    // nothing to check. Their join state stays at its default (not joined,
-    // not checking) and the UI does not read it in those cases.
     if (!userEmail || event.creatorEmail === userEmail) return;
     const eventId = event._id;
+
     let isActive = true;
 
     const checkJoinStatus = async () => {
@@ -249,6 +246,8 @@ export default function EventDetailsPage({
 
   // Join event
   const handleJoinEvent = async () => {
+    if (!event) return;
+
     if (!userEmail) {
       toast.info("Please login to join this event.");
       router.push(
