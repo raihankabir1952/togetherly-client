@@ -14,10 +14,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 interface LeaveEventDialogProps {
   eventId: string;
-  email: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLeft: () => void;
@@ -25,7 +25,6 @@ interface LeaveEventDialogProps {
 
 export default function LeaveEventDialog({
   eventId,
-  email,
   open,
   onOpenChange,
   onLeft,
@@ -36,9 +35,21 @@ export default function LeaveEventDialog({
     try {
       setIsLeaving(true);
 
+      // Get JWT token
+      const { data: tokenData, error } = await authClient.token();
+
+      if (error || !tokenData?.token) {
+        throw new Error("Failed to get authentication token.");
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}/leave?email=${encodeURIComponent(email)}`,
-        { method: "DELETE" }
+        `${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}/leave`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tokenData.token}`,
+          },
+        }
       );
 
       const data = await response.json();
@@ -48,11 +59,16 @@ export default function LeaveEventDialog({
       }
 
       toast.success("You have successfully left this event!");
+
       onOpenChange(false);
       onLeft();
     } catch (error) {
+      console.error("Leave event error:", error);
+
       toast.error(
-        error instanceof Error ? error.message : "Something went wrong."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong."
       );
     } finally {
       setIsLeaving(false);
@@ -64,6 +80,7 @@ export default function LeaveEventDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Leave this event?</AlertDialogTitle>
+
           <AlertDialogDescription>
             Are you sure you want to leave this event? You can join again later.
           </AlertDialogDescription>

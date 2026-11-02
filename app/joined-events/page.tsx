@@ -48,6 +48,7 @@ export default function JoinedEventsPage() {
     const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
 
     // Fetch joined events
+
     const fetchJoinedEvents = useCallback(async () => {
         if (!userEmail) return;
 
@@ -55,8 +56,20 @@ export default function JoinedEventsPage() {
             setIsLoading(true);
             setError("");
 
+            // Get JWT token
+            const { data: tokenData, error } = await authClient.token();
+
+            if (error || !tokenData?.token) {
+                throw new Error("Failed to get authentication token.");
+            }
+
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/joined-events?email=${encodeURIComponent(userEmail)}`
+                `${process.env.NEXT_PUBLIC_API_URL}/joined-events`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${tokenData.token}`,
+                    },
+                }
             );
 
             const data = await response.json();
@@ -80,6 +93,7 @@ export default function JoinedEventsPage() {
             setIsLoading(false);
         }
     }, [userEmail]);
+
 
     useEffect(() => {
         if (isSessionPending) return;

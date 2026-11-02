@@ -294,7 +294,7 @@ export default function ManageEventsPage() {
         {/* Delete Event Dialog */}
         <DeleteEventDialog
           event={selectedDeleteEvent}
-          email={userEmail || ""}
+          // email={userEmail || ""}
           open={isDeleteOpen}
           onOpenChange={setIsDeleteOpen}
           onDeleted={fetchMyEvents}

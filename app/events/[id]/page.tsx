@@ -204,8 +204,20 @@ export default function EventDetailsPage({
       try {
         setIsCheckingJoinStatus(true);
 
+        // Get JWT token
+        const { data: tokenData, error } = await authClient.token();
+
+        if (error || !tokenData?.token) {
+          throw new Error("Failed to get authentication token.");
+        }
+
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}/join-status?email=${encodeURIComponent(userEmail)}`
+          `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}/join-status`,
+          {
+            headers: {
+              Authorization: `Bearer ${tokenData.token}`,
+            },
+          }
         );
 
         const data = await response.json();
@@ -239,7 +251,9 @@ export default function EventDetailsPage({
   const handleJoinEvent = async () => {
     if (!userEmail) {
       toast.info("Please login to join this event.");
-      router.push(`/login?callbackURL=${encodeURIComponent(`/events/${event}`)}`);
+      router.push(
+        `/login?callbackURL=${encodeURIComponent(`/events/${event._id}`)}`
+      );
       return;
     }
 
@@ -248,16 +262,21 @@ export default function EventDetailsPage({
     try {
       setIsJoining(true);
 
+      // Get JWT token
+      const { data: tokenData, error } = await authClient.token();
+
+      if (error || !tokenData?.token) {
+        throw new Error("Failed to get authentication token.");
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}/join`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${tokenData.token}`,
           },
-          body: JSON.stringify({
-            email: userEmail,
-          }),
         }
       );
 
@@ -270,9 +289,7 @@ export default function EventDetailsPage({
       }
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to join this event."
-        );
+        throw new Error(data.message || "Failed to join this event.");
       }
 
       setIsJoined(true);

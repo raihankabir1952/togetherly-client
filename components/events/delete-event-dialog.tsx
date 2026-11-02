@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {authClient} from "@/lib/auth-client"
 
 interface Event {
   _id: string;
@@ -20,7 +21,7 @@ interface Event {
 
 interface DeleteEventDialogProps {
   event: Event | null;
-  email: string;
+  // email: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleted: () => void | Promise<void>;
@@ -28,7 +29,7 @@ interface DeleteEventDialogProps {
 
 export default function DeleteEventDialog({
   event,
-  email,
+  // email,
   open,
   onOpenChange,
   onDeleted,
@@ -41,10 +42,18 @@ export default function DeleteEventDialog({
     try {
       setIsDeleting(true);
 
+      const {data: tokenData, error } = await authClient.token();
+      if(error || !tokenData?.token){
+        throw new Error("Failed to get authentication token.");
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}?email=${encodeURIComponent(email)}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tokenData.token}`,
+          },
         }
       );
 
