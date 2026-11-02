@@ -315,11 +315,14 @@ export default function EventDetailsPage({
       return;
     }
 
-    const response = await fetch("http://localhost:5000/test-token", {
-      headers: {
-        Authorization: `Bearer ${data.token}`,
-      },
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/test-token`,
+      {
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+      }
+    );
 
     console.log(await response.json());
   };
