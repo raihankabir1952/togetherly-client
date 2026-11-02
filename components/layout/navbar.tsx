@@ -39,19 +39,26 @@ type ProfileUser = {
 
 // Declared outside Navbar so the component identity is stable across renders.
 function ProfileImage({ user, size = 40 }: { user: ProfileUser; size?: number }) {
+  // Remember a URL that failed to load so we fall back to initials instead of
+  // an empty circle. A changed URL is not blocked, so the avatar can retry.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const imageSrc = user?.image && user.image !== failedSrc ? user.image : null;
+
   return (
     <div
       className="relative shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10"
       style={{ width: size, height: size }}
     >
-      {user?.image ? (
+      {imageSrc ? (
         <Image
-          src={user.image}
+          key={imageSrc}
+          src={imageSrc}
           alt={user.name || "User"}
           fill
           sizes={`${size}px`}
           className="object-cover"
           unoptimized
+          onError={() => setFailedSrc(imageSrc)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-primary text-sm font-semibold text-white">
