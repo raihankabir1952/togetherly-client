@@ -1,12 +1,18 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { jwt } from "better-auth/plugins";
+
 import clientPromise from "@/lib/db";
-import { jwt } from "better-auth/plugins"
 
 const client = await clientPromise;
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
+
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://togetherly-client-murex.vercel.app",
+  ],
 
   database: mongodbAdapter(client.db("togetherly"), {
     client,
@@ -18,16 +24,14 @@ export const auth = betterAuth({
     requireEmailVerification: false,
   },
 
-  plugins: [
-    jwt()
-  ],
+  plugins: [jwt()],
+
   session: {
     cookieCache: {
       strategy: "jwt",
       enabled: true,
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-
-    }
+      maxAge: 7 * 24 * 60 * 60,
+    },
   },
 
   account: {

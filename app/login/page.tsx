@@ -22,7 +22,8 @@ import { authClient } from "@/lib/auth-client";
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackURL = searchParams.get("callbackURL") || "/events";
+  // const callbackURL = searchParams.get("callbackURL") || "/events";
+  const callbackURL = "/events";
 
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);

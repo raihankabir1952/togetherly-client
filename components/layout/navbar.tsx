@@ -1,11 +1,17 @@
-
 "use client";
 
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarCheck, CalendarCog, CalendarPlus, Menu, X } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarCog,
+  CalendarPlus,
+  Menu,
+  X,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { IoIosLogOut } from "react-icons/io";
@@ -22,10 +28,10 @@ import {
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Explore Events", href: "/events" },
-  // { name: "About", href: "/#about" },
 ];
 
 const profileMenuLinks = [
+  { name: "My Profile", href: "/profile", icon: UserRound },
   { name: "Create Event", href: "/create-event", icon: CalendarPlus },
   { name: "Manage Events", href: "/manage-events", icon: CalendarCog },
   { name: "Joined Events", href: "/joined-events", icon: CalendarCheck },
@@ -37,12 +43,16 @@ type ProfileUser = {
   image?: string | null;
 };
 
-// Declared outside Navbar so the component identity is stable across renders.
-function ProfileImage({ user, size = 40 }: { user: ProfileUser; size?: number }) {
-  // Remember a URL that failed to load so we fall back to initials instead of
-  // an empty circle. A changed URL is not blocked, so the avatar can retry.
+function ProfileImage({
+  user,
+  size = 40,
+}: {
+  user: ProfileUser;
+  size?: number;
+}) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const imageSrc = user?.image && user.image !== failedSrc ? user.image : null;
+  const imageSrc =
+    user?.image && user.image !== failedSrc ? user.image : null;
 
   return (
     <div
@@ -99,9 +109,10 @@ function ProfileDropdown({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align={align} sideOffset={8} className="w-72">
-        {/* User info */}
+        {/* User Information */}
         <div className="flex items-center gap-3 px-2 py-2">
           <ProfileImage user={user} size={44} />
+
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-popover-foreground">
               {user?.name || "User"}
@@ -114,10 +125,12 @@ function ProfileDropdown({
 
         <DropdownMenuSeparator />
 
-        {/* Navigation links */}
+        {/* Profile Navigation Links */}
         {profileMenuLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href;
+          const isActive =
+            pathname === link.href ||
+            pathname.startsWith(`${link.href}/`);
 
           return (
             <DropdownMenuItem
@@ -131,7 +144,9 @@ function ProfileDropdown({
               }`}
             >
               <Icon
-                className={`h-4 w-4 ${isActive ? "text-primary" : "text-primary/80"}`}
+                className={`h-4 w-4 ${
+                  isActive ? "text-primary" : "text-primary/80"
+                }`}
                 aria-hidden="true"
               />
               {link.name}
@@ -198,8 +213,7 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => {
-            const isActive =
-              link.href === "/#about" ? false : pathname === link.href;
+            const isActive = pathname === link.href;
 
             return (
               <Link
@@ -218,15 +232,16 @@ export function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden items-center gap-3 md:flex">
           <ThemeToggle />
+
           {!isPending &&
             (isLoggedIn ? (
               <div className="flex items-center gap-3">
-                {/* User Profile Image */}
+                {/* User Profile */}
                 <ProfileDropdown user={session.user} align="end">
                   <ProfileImage user={session.user} />
                 </ProfileDropdown>
 
-                {/* Logout Button */}
+                {/* Logout */}
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -268,6 +283,7 @@ export function Navbar() {
         {/* Mobile Actions */}
         <div className="flex items-center gap-1 md:hidden">
           <ThemeToggle />
+
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
@@ -311,6 +327,7 @@ export function Navbar() {
                       onNavigate={closeMenu}
                     >
                       <ProfileImage user={session.user} size={44} />
+
                       <span className="text-sm font-medium text-foreground">
                         {session.user.name}
                       </span>
