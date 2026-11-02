@@ -197,7 +197,7 @@ export default function EventDetailsPage({
     // nothing to check. Their join state stays at its default (not joined,
     // not checking) and the UI does not read it in those cases.
     if (!userEmail || event.creatorEmail === userEmail) return;
-
+    const eventId = event._id;
     let isActive = true;
 
     const checkJoinStatus = async () => {
@@ -212,7 +212,7 @@ export default function EventDetailsPage({
         }
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/events/${event._id}/join-status`,
+          `${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}/join-status`,
           {
             headers: {
               Authorization: `Bearer ${tokenData.token}`,
